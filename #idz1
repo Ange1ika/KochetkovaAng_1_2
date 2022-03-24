@@ -1,0 +1,115 @@
+// Kochetkova_1_2.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
+/*Считать с клавиатуры квадратную матрицу, состоящую из целых чисел.
+Определить наибольший полный квадрат в каждой строке, столбце, и
+диагонали.Вывести на экран.
+* Полным квадратом называется число, являющееся квадратом некоторого
+целого числа.*/
+
+#include <iostream>
+#include <ctime>
+#include <malloc.h>
+#include <new>
+#include <locale>
+constexpr auto MMax = -2147483648;
+
+using namespace std;
+void stroki(int** bb, int n);
+void stolbci(int** bb, int n);
+void maind(int** bb, int n);
+void pobochd(int** bb, int n);
+int main()
+{
+    int n, i, j, maxkvadrat;
+    const int MMax = -1e30;
+    setlocale(LC_ALL, "Rus");
+    cout << "Введите количество строк и столбцов квадратной матрицы (целое число, соответствующее для всех параметров)\n";
+    cin >> n;
+    int** aa = new int* [n];
+    for (i = 0; i < n; i++) {
+        aa[i] = new int[n];//цикл выделения динамической памяти под массив
+    }
+    int** bb = new int* [n];
+    for (i = 0; i < n; i++) {
+        bb[i] = new int[n];//цикл выделения динамической памяти под массив
+    }
+    cout << "\nВведите элементы массива(целые числа)\n";
+    maxkvadrat = MMax;
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++)
+        {
+            cin >> aa[i][j];//ввод элементов матрицы
+            bb[i][j] = aa[i][j] * aa[i][j];//заполнение матрицы квадратов
+        }
+    }
+    stroki(bb, n);
+    stolbci(bb, n);
+    maind(bb, n);
+    pobochd(bb, n);
+
+
+    for (i = 0; i < n; i++) {
+        delete[] aa[i];
+        delete[] bb[i];
+        cin.get();
+        return 0;
+    }
+}
+
+void stroki(int** bb, int n)//поиск и вывод максимального полного квадрата в строках
+{
+    int i, j, maxkvadrat;
+    maxkvadrat = MMax;
+    for (i = 0; i < n; i++) {
+        for (j = 0; j < n; j++)
+        {
+            if (bb[i][j] > maxkvadrat)
+            {
+                maxkvadrat = bb[i][j];// поиск максимального полного квадрата в строке
+            }
+        }cout << "\nMax полный квадрат" << i + 1 << "строки =" << maxkvadrat;
+
+    }
+
+}
+void stolbci(int** bb, int n)//поиск и вывод максимального полного квадрата в столбцах
+{
+    int i, j, maxkvadrat;
+    maxkvadrat = MMax;
+    for (j = 0; j < n; j++) {
+        for (i = 0; i < n; i++)
+        {
+            if (bb[i][j] > maxkvadrat)
+            {
+                maxkvadrat = bb[i][j];// поиск максимального полного квадрата в столбце
+            }
+        }cout << "\nMax полный квадрат" << j + 1 << "столбца =" << maxkvadrat;
+
+    }
+
+}
+void maind(int** bb, int n)//поиск и вывод максимального полного квадрата на главной диагонали
+{
+    int i, j, maxkvadrat;
+    maxkvadrat = MMax;
+    for (i = 0; i < n; i++) {
+        if (bb[i][i] > maxkvadrat)
+        {
+            maxkvadrat = bb[i][i];// поиск максимального полного квадрата в главной диагонали
+        }
+    }
+    cout << "\nMax полный квадрат главной диагонали =" << maxkvadrat;
+
+}
+void pobochd(int** bb, int n)//поиск и вывод максимального полного квадрата на побочной диагонали
+{
+    int i, j, maxkvadrat;
+    maxkvadrat = MMax;
+    for (i = 0; i < n; i++) {
+        if (bb[i][n - i - 1] > maxkvadrat)
+        {
+            maxkvadrat = bb[i][n - i - 1];// поиск максимального полного квадрата в побочной диагонали
+        }
+    }
+    cout << "\nMax полный квадрат побочной диагонали =" << maxkvadrat;
+
+}
