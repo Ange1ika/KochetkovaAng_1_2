@@ -1,0 +1,411 @@
+#pragma once
+#include <winsock2.h>//для работы с сетью, спец  библ, есть две версии на виндовс, используем вторую
+
+namespace ChatClientForm {
+
+	using namespace System;
+	using namespace System::ComponentModel;
+	using namespace System::Collections;
+	using namespace System::Windows::Forms;
+	using namespace System::Data;
+	using namespace System::Drawing;
+	using namespace System::Threading;
+
+	/// <summary>
+	/// Сводка для MyForm
+	/// </summary>
+	public ref class ChatForm : public System::Windows::Forms::Form
+	{
+	public:
+		ChatForm(void)
+		{
+			InitializeComponent();
+			listen = false;
+			//
+			//TODO: добавьте код конструктора
+			//
+		}
+	protected:
+		/// <summary>
+		/// Освободить все используемые ресурсы.
+		/// </summary>
+		~ChatForm()
+		{
+			if (components)
+			{
+				delete components;
+			}
+		}
+	private: System::Windows::Forms::Label^ lblServer;
+	protected:
+	private: System::Windows::Forms::TextBox^ txtBoxServer;
+	private: System::Windows::Forms::Label^ lblPort;
+	private: System::Windows::Forms::TextBox^ txtBoxPort;
+
+	private: System::Windows::Forms::Button^ btnConnect;
+	private: System::Windows::Forms::Button^ btnDisconnect;
+
+	private: System::Windows::Forms::RichTextBox^ rtbMessage;
+	private: System::Windows::Forms::Button^ btnSend;
+	private: System::Windows::Forms::Button^ btnClear;
+		   //Добавим в класс формы сокет
+	private: System::Net::Sockets::Socket^ aSocket;
+		   enum class Packet {//	Enum – пользовательский тип данных, 
+				//который представляет собой набор именованных целочисленных констант
+			   P_ChatMessage,//переменная, отвечающая за тип пакета
+			   P_Test// тестовый тип пакета
+		   };
+	private:
+		bool listen;
+		Thread^ thread;
+	private: System::Windows::Forms::ListBox^ lbMessages;
+	private: System::Windows::Forms::Label^ lblUserName;
+	private: System::Windows::Forms::TextBox^ txtBoxNickName;
+
+
+
+
+		   /// <summary>
+		   /// Обязательная переменная конструктора.
+		   /// </summary>
+		   System::ComponentModel::Container^ components;
+
+#pragma region Windows Form Designer generated code
+		   /// <summary>
+		   /// Требуемый метод для поддержки конструктора — не изменяйте 
+		   /// содержимое этого метода с помощью редактора кода.
+		   /// </summary>
+		   void InitializeComponent(void)
+		   {
+
+			   this->lblServer = (gcnew System::Windows::Forms::Label());
+			   this->txtBoxServer = (gcnew System::Windows::Forms::TextBox());
+			   this->lblPort = (gcnew System::Windows::Forms::Label());
+			   this->txtBoxPort = (gcnew System::Windows::Forms::TextBox());
+			   this->btnConnect = (gcnew System::Windows::Forms::Button());
+			   this->btnDisconnect = (gcnew System::Windows::Forms::Button());
+			   this->rtbMessage = (gcnew System::Windows::Forms::RichTextBox());
+			   this->btnSend = (gcnew System::Windows::Forms::Button());
+			   this->btnClear = (gcnew System::Windows::Forms::Button());
+			   this->lbMessages = (gcnew System::Windows::Forms::ListBox());
+			   this->lblUserName = (gcnew System::Windows::Forms::Label());
+			   this->txtBoxNickName = (gcnew System::Windows::Forms::TextBox());
+			   this->SuspendLayout();
+			   // 
+			   // lblServer
+			   // 
+			   this->lblServer->AutoSize = true;
+			   this->lblServer->Location = System::Drawing::Point(51, 31);
+			   this->lblServer->Margin = System::Windows::Forms::Padding(4, 0, 4, 0);
+			   this->lblServer->Name = L"lblServer";
+			   this->lblServer->Size = System::Drawing::Size(65, 20);
+			   this->lblServer->TabIndex = 0;
+			   this->lblServer->Text = L"Сервер";
+			   // 
+			   // txtBoxServer
+			   // 
+			   this->txtBoxServer->Location = System::Drawing::Point(127, 31);
+			   this->txtBoxServer->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->txtBoxServer->Name = L"txtBoxServer";
+			   this->txtBoxServer->Size = System::Drawing::Size(148, 26);
+			   this->txtBoxServer->TabIndex = 1;
+			   this->txtBoxServer->Text = L"127.0.0.1";
+			   // 
+			   // lblPort
+			   // 
+			   this->lblPort->AutoSize = true;
+			   this->lblPort->Location = System::Drawing::Point(285, 31);
+			   this->lblPort->Margin = System::Windows::Forms::Padding(4, 0, 4, 0);
+			   this->lblPort->Name = L"lblPort";
+			   this->lblPort->Size = System::Drawing::Size(48, 20);
+			   this->lblPort->TabIndex = 2;
+			   this->lblPort->Text = L"Порт";
+			   // 
+			   // txtBoxPort
+			   // 
+			   this->txtBoxPort->Location = System::Drawing::Point(343, 31);
+			   this->txtBoxPort->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->txtBoxPort->Name = L"txtBoxPort";
+			   this->txtBoxPort->Size = System::Drawing::Size(148, 26);
+			   this->txtBoxPort->TabIndex = 3;
+			   this->txtBoxPort->Text = L"1111";
+			   // 
+			   // btnConnect
+			   // 
+			   this->btnConnect->Location = System::Drawing::Point(127, 67);
+			   this->btnConnect->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->btnConnect->Name = L"btnConnect";
+			   this->btnConnect->Size = System::Drawing::Size(150, 35);
+			   this->btnConnect->TabIndex = 4;
+			   this->btnConnect->Text = L"Connect";
+			   this->btnConnect->UseVisualStyleBackColor = true;
+			   this->btnConnect->Click += gcnew System::EventHandler(this, &ChatForm::btnConnect_Click);
+			   // 
+			   // btnDisconnect
+			   // 
+			   this->btnDisconnect->Enabled = false;
+			   this->btnDisconnect->Location = System::Drawing::Point(343, 67);
+			   this->btnDisconnect->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->btnDisconnect->Name = L"btnDisconnect";
+			   this->btnDisconnect->Size = System::Drawing::Size(150, 35);
+			   this->btnDisconnect->TabIndex = 5;
+			   this->btnDisconnect->Text = L"Disconnect";
+			   this->btnDisconnect->UseVisualStyleBackColor = true;
+			   this->btnDisconnect->Click += gcnew System::EventHandler(this, &ChatForm::btnDisconnect_Click);
+			   // 
+			   // rtbMessage
+			   // 
+			   this->rtbMessage->Location = System::Drawing::Point(36, 492);
+			   this->rtbMessage->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->rtbMessage->Name = L"rtbMessage";
+			   this->rtbMessage->Size = System::Drawing::Size(488, 155);
+			   this->rtbMessage->TabIndex = 7;
+			   this->rtbMessage->Text = L"";
+			   // 
+			   // btnSend
+			   // 
+			   this->btnSend->Location = System::Drawing::Point(36, 657);
+			   this->btnSend->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->btnSend->Name = L"btnSend";
+			   this->btnSend->Size = System::Drawing::Size(112, 35);
+			   this->btnSend->TabIndex = 8;
+			   this->btnSend->Text = L"SEND";
+			   this->btnSend->UseVisualStyleBackColor = true;
+			   this->btnSend->Click += gcnew System::EventHandler(this, &ChatForm::btnSend_Click);
+			   // 
+			   // btnClear
+			   // 
+			   this->btnClear->Location = System::Drawing::Point(414, 657);
+			   this->btnClear->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->btnClear->Name = L"btnClear";
+			   this->btnClear->Size = System::Drawing::Size(112, 35);
+			   this->btnClear->TabIndex = 9;
+			   this->btnClear->Text = L"CLEAR";
+			   this->btnClear->UseVisualStyleBackColor = true;
+			   this->btnClear->Click += gcnew System::EventHandler(this, &ChatForm::btnClear_Click);
+			   // 
+			   // lbMessages
+			   // 
+			   this->lbMessages->FormattingEnabled = true;
+			   this->lbMessages->ItemHeight = 20;
+			   this->lbMessages->Location = System::Drawing::Point(36, 170);
+			   this->lbMessages->Name = L"lbMessages";
+			   this->lbMessages->Size = System::Drawing::Size(488, 284);
+			   this->lbMessages->TabIndex = 10;
+			   // 
+			   // lblUserName
+			   // 
+			   this->lblUserName->AutoSize = true;
+			   this->lblUserName->Location = System::Drawing::Point(41, 122);
+			   this->lblUserName->Name = L"lblUserName";
+			   this->lblUserName->Size = System::Drawing::Size(79, 20);
+			   this->lblUserName->TabIndex = 11;
+			   this->lblUserName->Text = L"Nickname";
+			   this->lblUserName->Click += gcnew System::EventHandler(this, &ChatForm::label1_Click);
+			   // 
+			   // txtBoxNickName
+			   // 
+			   this->txtBoxNickName->Location = System::Drawing::Point(124, 116);
+			   this->txtBoxNickName->Name = L"txtBoxNickName";
+			   this->txtBoxNickName->Size = System::Drawing::Size(367, 26);
+			   this->txtBoxNickName->TabIndex = 12;
+			   // 
+			   // ChatForm
+			   // 
+			   this->AutoScaleDimensions = System::Drawing::SizeF(9, 20);
+			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			   this->ClientSize = System::Drawing::Size(558, 962);
+			   this->Controls->Add(this->txtBoxNickName);
+			   this->Controls->Add(this->lblUserName);
+			   this->Controls->Add(this->lbMessages);
+			   this->Controls->Add(this->btnClear);
+			   this->Controls->Add(this->btnSend);
+			   this->Controls->Add(this->rtbMessage);
+			   this->Controls->Add(this->btnDisconnect);
+			   this->Controls->Add(this->btnConnect);
+			   this->Controls->Add(this->txtBoxPort);
+			   this->Controls->Add(this->lblPort);
+			   this->Controls->Add(this->txtBoxServer);
+			   this->Controls->Add(this->lblServer);
+			   this->Margin = System::Windows::Forms::Padding(4, 5, 4, 5);
+			   this->Name = L"ChatForm";
+			   this->Text = L"ChatClient";
+			   this->FormClosing += gcnew System::Windows::Forms::FormClosingEventHandler(this, &ChatForm::ChatForm_FormClosing);
+			   this->ResumeLayout(false);
+			   this->PerformLayout();
+
+		   }
+#pragma endregion
+	private: System::Void btnConnect_Click(System::Object^ sender, System::EventArgs^ e) {
+		//создаем объект сокет
+		aSocket = gcnew System::Net::Sockets::Socket(System::Net::Sockets::SocketType::Stream, System::Net::Sockets::ProtocolType::Tcp);
+		try {
+			this->aSocket->Connect(this->txtBoxServer->Text, System::Int32::Parse(this->txtBoxPort->Text));
+		}
+		catch (System::Net::Sockets::SocketException^ e)
+		{
+			lbMessages->Items->Add("Ошибка соединения с сервером " + txtBoxServer->Text);
+		}
+
+
+		if (this->aSocket->Connected)
+		{
+			int msg_size = 0;
+			int int_size = sizeof(int);
+			msg_size = this->txtBoxNickName->TextLength;
+			array<unsigned char>^ buffer = gcnew array<unsigned char>(int_size + msg_size);
+			for (int i = 0; i < int_size; i++)
+			{
+				buffer[i] = ((char*)&msg_size)[i];
+			}
+
+			char* txtbuffer = (char*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(this->txtBoxNickName->Text).ToPointer();
+			for (int i = 0; i < msg_size; i++)
+				buffer[i + int_size] = txtbuffer[i];
+
+			this->aSocket->Send(buffer, 0, msg_size + int_size, System::Net::Sockets::SocketFlags::None);
+
+			this->btnConnect->Enabled = false;
+			this->btnDisconnect->Enabled = true;
+			this->listen = true;
+			this->thread = gcnew Thread(gcnew ParameterizedThreadStart(this, &ChatForm::ClientHandler));
+			this->thread->IsBackground = true;
+			this->thread->Start();
+		}
+	}
+	private: System::Void btnDisconnect_Click(System::Object^ sender, System::EventArgs^ e) {
+		try {
+			this->thread->Abort();
+			this->listen = false;
+			this->aSocket->Close();
+			this->btnConnect->Enabled = true;
+			this->btnDisconnect->Enabled = false;
+
+		}
+		catch (System::Net::Sockets::SocketException^ e)
+		{
+			lbMessages->Items->Add("Соединение разорвано с сервером " + txtBoxServer->Text);
+			System::Windows::Forms::MessageBox::Show(e->Message);
+		}
+
+
+	}
+	private: System::Void btnClear_Click(System::Object^ sender, System::EventArgs^ e) {
+		this->rtbMessage->Clear();
+	}
+	private: System::Void btnSend_Click(System::Object^ sender, System::EventArgs^ e) {
+		Packet packettype = Packet::P_ChatMessage;
+		int msg_size = 0;
+		int int_size = sizeof(int);
+		int p_size = sizeof(Packet);
+
+		if ((this->rtbMessage->TextLength != 0) && this->aSocket->Connected)
+		{
+			this->lbMessages->Items->Add(this->rtbMessage->Text);
+			msg_size = this->rtbMessage->TextLength;
+			array<unsigned char>^ buffer = gcnew array<unsigned char>(p_size + int_size + msg_size);
+			for (int i = 0; i < p_size; i++)
+			{
+				buffer[i] = ((char*)&packettype)[i];
+			}
+			for (int i = p_size; i < p_size + int_size; i++)
+			{
+				buffer[i] = ((char*)&msg_size)[i - int_size];
+			}
+
+			char* txtbuffer = (char*)System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(this->rtbMessage->Text).ToPointer();
+			for (int i = 0; i < msg_size; i++)
+				buffer[i + p_size + int_size] = txtbuffer[i];
+
+			this->aSocket->Send(buffer, 0, msg_size + p_size + int_size, System::Net::Sockets::SocketFlags::None);
+			this->rtbMessage->Clear();
+		}
+
+
+	}
+	public: System::Void ClientHandler(System::Object^ obj) {
+		//переменная для типа пакета
+		Packet packegetype;
+		//переменная для размера сообщения
+		int msg_size = 0;
+		int int_size = sizeof(int);
+		int p_size = sizeof(Packet);
+		//создаем буффер для приема типа сообщения
+		array<unsigned char>^ pbuffer = gcnew array<unsigned char>(p_size);
+		//создаем буффер для приема длины сообщения
+		array<unsigned char>^ lbuffer = gcnew array<unsigned char>(int_size);
+		//буффер сообщения
+		array<unsigned char>^ mbuffer;
+		while (this->listen)
+		{
+			try
+			{
+				this->aSocket->Receive(pbuffer, p_size, System::Net::Sockets::SocketFlags::None);
+				for (int i = 0; i < p_size; i++)
+					((char*)&packegetype)[i] = pbuffer[i];
+				if (packegetype == Packet::P_ChatMessage)
+				{
+					//читаем размер сообщения
+					this->aSocket->Receive(lbuffer, int_size, System::Net::Sockets::SocketFlags::None);
+
+					for (int i = 0; i < int_size; i++)
+						((char*)&msg_size)[i] = lbuffer[i];
+					//создаем буффер для приема  сообщения
+					mbuffer = gcnew array<unsigned char>(msg_size + 1);
+					mbuffer[msg_size] = '\0';
+					//читаем сообщение
+					this->aSocket->Receive(mbuffer, msg_size, System::Net::Sockets::SocketFlags::None);
+					AddTextToMessages(mbuffer);
+
+				}
+
+			}
+
+			catch (System::Net::Sockets::SocketException^ e)//
+			{
+				this->listen = false;
+				this->aSocket->Close();
+			}
+
+
+		}
+
+	}
+	private: void AddTextToMessages(array<unsigned char>^ buffer)
+	{
+
+		if (this->lbMessages->InvokeRequired) {
+			this->lbMessages->Invoke(gcnew System::Action<array<unsigned char>^>(this, &ChatForm::AddTextToMessages), buffer);
+
+		}
+		else
+		{
+			//char charr[1024]; 
+			char *charr = new char[buffer->Length + 1];
+			charr[buffer->Length] = '\0';
+			//delete charr;
+			for (int i = 0; i < buffer->Length; i++)
+			{
+				charr[i] = buffer[i];
+			}
+			System::String^ s = System::Runtime::InteropServices::Marshal::PtrToStringAnsi((System::IntPtr)charr);
+
+			this->lbMessages->Items->Add(s);
+			delete[] charr;
+		}
+	}
+
+	
+
+private: System::Void ChatForm_FormClosing(System::Object^ sender, System::Windows::Forms::FormClosingEventArgs^ e) {
+	if (this->listen)
+	{
+		this->listen = false;
+		this->aSocket->Close();
+	}
+		
+}
+private: System::Void label1_Click(System::Object^ sender, System::EventArgs^ e) {
+}
+};
+}
