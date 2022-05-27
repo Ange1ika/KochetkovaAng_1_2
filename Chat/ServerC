@@ -1,0 +1,99 @@
+
+#include <iostream>
+#include "ChatServer.h"
+
+
+
+int main()
+{
+	//установим дату и время старта сервера 
+	server_start_time = time(0);
+	SetLogFilename();
+	f.open(logfile_name, fstream::in | fstream::out | fstream::app);
+	//создаем список соединений
+	connList = new ClientConnectionList;
+
+		//прежде чем начать работать с сетью, нужно загрузить необходимую, подходящую
+		// версию библиотеки 
+		//WSAStartup
+	WSAData wsaData;//структура
+	WORD DLLVersion = MAKEWORD(2, 1);//создали переменную(запрашиваемая переменная библиотеки винсок)
+	//WSAStartup(DLLVersion, &wsaData);//функция для загрузки библиотеки,первый пар - запрашиваемая версия
+	//библиотеки, второй - структура
+	//чтобы загрузить библиотеку необходимо сделать проверку
+	if (WSAStartup(DLLVersion, &wsaData) != 0)
+	{
+		std::cout << "Error" << std::endl;
+		exit(1);
+	}
+	//после загрузки библиотеки необходимо заполнить информацию об адресе сокета
+	SOCKADDR_IN addr;//предназначена для хранения адреса, для интернет протоколов sockaddr_in
+	int sizeofaddr = sizeof(addr);
+	addr.sin_addr.s_addr = inet_addr("127.0.0.1");// sin_addr - структура sockaddr_in, которая хранит IP
+	// адрес, в скобках local хост
+	addr.sin_port = htons(1111);//порт для идентификации информации с поступающими данными, в скобках
+	//указать любой порт, главное, чтобы он не был зарезервирован другой программой
+	addr.sin_family = AF_INET;//семейство протоколов, для интернет-протоколов указывается константа
+	//AF_INET
+	//чтобы два компьютера смогли установить соединение, один из них должен запустить прослушивание
+	//на пределённом порту
+	SOCKET sListen = socket(AF_INET, SOCK_STREAM, NULL);//создали сокет sListen, которому присвоили
+	//результат выполнения функции socket, которой передали 3 параметра:
+	//1-семейство интернет-протоколов, 2-указывает на протокол, обеспечивающий соединение, 3-пока не нужен
+	bind(sListen, (SOCKADDR*)&addr, sizeof(addr));//привязали адрес сокета, 1 пар- предварительно созданный
+	//сокет, 2 пар- указатель на структуру SOCKADDR, 3 - размер структуры SOCKADDR
+	//после того, как локальный адрес и порт привязаны к сокету нужно приступить к прослушиванию порта,
+	//в ожидании соединения со стороны клиента, для этого служит функция:
+	listen(sListen, 100); //1-сокет, по какому порту можно начать прослушивание, 2- макс число запросов,
+	//ожидающих обработки
+	//объявляем новый сокет, чтобы выдерживать соединение с клиентом
+	SOCKET newSocket;
+	//новое клиентское соединение
+	ClientConnection* newConnection;
+
+	
+	while(true){
+		if (connList->count < connList->max_connections)
+		{
+			newSocket = accept(sListen, (SOCKADDR*)&addr, &sizeofaddr);// 
+				// проверка на случай не подключения клиента
+			if (newSocket == 0) {
+				m.lock();
+				f << "Socker error"<< " " << GetDateTime() << std::endl << std::flush;
+				m.unlock();
+			}
+			else {
+				int msg_size = 0;//буфер для длины никнейма
+				char* nbuffer;//буфер никнейма
+				//читаем длину никнейма
+				recv(newSocket, (char*)&msg_size, sizeof(int), NULL);
+				nbuffer = new char[msg_size + 1];
+				nbuffer[msg_size] = '\0';
+				recv(newSocket, nbuffer, msg_size, NULL);
+				//добавляем соединение в список
+				
+				newConnection = connList->AddItem(newSocket, nbuffer);
+				std::cout << "Client Connected!\n";
+				//необходимо отправить размер сообщения
+				std::string msg = "Hello ";
+				msg.append(nbuffer);
+				m.lock();
+				f << "User "<< newConnection->Nickname << " " << " connected" << " " << GetDateTime()<<std::endl << std::flush;
+				m.unlock();
+				msg_size = msg.size();
+				Packet msgtype = P_ChatMessage;
+				send(newSocket, (char*)&msgtype, sizeof(Packet), NULL);
+				send(newSocket, (char*)&msg_size, sizeof(int), NULL);
+				send(newSocket, msg.c_str(), msg_size, NULL);
+				//считывает и высылает сообщения от одного клиента всем, за исключением отправителя
+				CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandler, (LPVOID)(newConnection), NULL, NULL);
+				////после этой функции работают два потока
+				
+			}
+		}
+	}
+	system("pause");
+	f.close();
+	return 0;
+}
+
